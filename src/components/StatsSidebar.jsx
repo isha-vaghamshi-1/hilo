@@ -3,7 +3,7 @@ import { Trophy, Star } from "lucide-react";
 
 const StatsSidebar = ({ score, bestScore }) => {
     return (
-        <aside className="flex flex-col gap-6 p-9 bg-white rounded-[36px] shadow-2xl shadow-slate-200/50 border border-white/80 self-center">
+        <aside className="flex flex-col gap-4 md:gap-6 p-6 md:p-9 bg-white rounded-[24px] md:rounded-[36px] shadow-xl md:shadow-2xl shadow-slate-200/50 border border-white/80 self-center">
             <span className="text-xs font-extrabold tracking-[2px] text-slate-400 uppercase">
                 SESSION STATS
             </span>

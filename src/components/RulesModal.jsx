@@ -17,7 +17,7 @@ const RulesModal = ({ showRules, setShowRules }) => {
                         initial={{ scale: 0.8, y: 50 }}
                         animate={{ scale: 1, y: 0 }}
                         exit={{ scale: 0.8, y: 50 }}
-                        className="w-full max-w-[450px] p-10 bg-white rounded-[32px] shadow-2xl flex flex-col gap-8 text-center"
+                        className="w-full max-w-[450px] p-6 md:p-10 bg-white rounded-[32px] shadow-2xl flex flex-col gap-6 md:gap-8 text-center"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <h2 className="text-2xl font-black text-slate-800 uppercase italic tracking-wider">

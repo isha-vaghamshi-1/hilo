@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { useForm } from "react-hook-form";
 import Navbar from "./components/Navbar";
 import BettingSidebar from "./components/BettingSidebar";
 import Arena from "./components/Arena";
@@ -8,17 +9,35 @@ import RulesModal from "./components/RulesModal";
 import { getRandomCard } from "./utils/cardUtils";
 
 function App() {
-  // State
-  const [balance, setBalance] = useState(10000);
-  const [betAmount, setBetAmount] = useState(100);
-  const [multiplier, setMultiplier] = useState(1.0);
-  const [gameState, setGameState] = useState("idle"); // 'idle', 'live', 'burst'
+  // Form handling (Game Data)
+  const { register, watch, setValue, getValues } = useForm({
+    defaultValues: {
+      betAmount: 100,
+      balance: 10000,
+      multiplier: 1.0,
+      gameState: "idle", // 'idle', 'live', 'burst'
+      score: 0,
+      bestScore: 0,
+      streak: 0,
+      showRules: false,
+    },
+  });
+
+  // Watch values for reactive UI
+  const {
+    betAmount: betAmountValue,
+    balance: balanceValue,
+    multiplier: multiplierValue,
+    gameState: gameStateValue,
+    score: scoreValue,
+    bestScore: bestScoreValue,
+    streak: streakValue,
+    showRules: showRulesValue,
+  } = watch();
+
+  // Logic/UI State (Not suitable for form)
   const [currentCard, setCurrentCard] = useState(getRandomCard());
   const [nextCard, setNextCard] = useState(null);
-  const [score, setScore] = useState(0);
-  const [bestScore, setBestScore] = useState(0);
-  const [streak, setStreak] = useState(0);
-  const [showRules, setShowRules] = useState(false);
 
   // Animation states
   const [isRevealing, setIsRevealing] = useState(false);
@@ -41,20 +60,24 @@ function App() {
 
   // Handlers
   const handleBet = () => {
-    if (balance < betAmount || betAmount <= 0) return;
-    setBalance((prev) => prev - betAmount);
-    setGameState("live");
-    setMultiplier(1.0);
-    setScore(0);
-    setStreak(0);
+    const amount = getValues("betAmount");
+    const currentBalance = getValues("balance");
+    if (currentBalance < amount || amount <= 0) return;
+    setValue("balance", currentBalance - amount);
+    setValue("gameState", "live");
+    setValue("multiplier", 1.0);
+    setValue("score", 0);
+    setValue("streak", 0);
   };
 
   const handleCashout = () => {
-    if (gameState !== "live") return;
-    const profit = betAmount * multiplier;
-    setBalance((prev) => prev + profit);
-    setMultiplier(1.0);
-    setGameState("idle");
+    if (gameStateValue !== "live") return;
+    const amount = getValues("betAmount");
+    const currentBalance = getValues("balance");
+    const profit = amount * multiplierValue;
+    setValue("balance", currentBalance + profit);
+    setValue("multiplier", 1.0);
+    setValue("gameState", "idle");
   };
 
   const handleSkip = () => {
@@ -64,7 +87,13 @@ function App() {
   };
 
   const handleGuess = (guess) => {
-    if (gameState !== "live" || !!nextCard || isRevealing || isMoving) return;
+    if (
+      gameStateValue !== "live" ||
+      !!nextCard ||
+      isRevealing ||
+      isMoving
+    )
+      return;
 
     setIsRevealing(true);
 
@@ -84,12 +113,13 @@ function App() {
         const stepMult = parseFloat(
           guess === "higher" ? odds.hMult : odds.lMult,
         );
-        const newMult = multiplier * stepMult;
+        const newMult = multiplierValue * stepMult;
 
-        setMultiplier(newMult);
-        setScore((s) => s + 1);
-        setStreak((st) => st + 1);
-        if (score + 1 > bestScore) setBestScore(score + 1);
+        setValue("multiplier", newMult);
+        const newScore = scoreValue + 1;
+        setValue("score", newScore);
+        setValue("streak", streakValue + 1);
+        if (newScore > bestScoreValue) setValue("bestScore", newScore);
 
         // Wait to show the card, then move it
         setTimeout(() => {
@@ -104,12 +134,12 @@ function App() {
           }, 600); // Duration of the slide
         }, 800);
       } else {
-        setGameState("burst");
-        setMultiplier(0);
-        setStreak(0);
+        setValue("gameState", "burst");
+        setValue("multiplier", 0);
+        setValue("streak", 0);
 
         setTimeout(() => {
-          setGameState("idle");
+          setValue("gameState", "idle");
           setShouldFlip(true);
           setCurrentCard(getRandomCard());
           setNextCard(null);
@@ -119,39 +149,52 @@ function App() {
   };
 
   return (
-    <div className="relative flex flex-col w-full h-screen overflow-hidden">
-      <Navbar balance={balance} setShowRules={setShowRules} />
+    <div className="relative flex flex-col w-full min-h-screen overflow-hidden bg-slate-50">
+      <Navbar
+        balance={balanceValue}
+        setShowRules={(val) => setValue("showRules", val)}
+      />
 
-      <main className="relative z-10 flex flex-1 items-center justify-center px-12 py-4">
-        <div className="grid grid-cols-[320px_1fr_320px] items-center w-full max-w-[1550px] h-[90%] gap-10">
-          <BettingSidebar
-            betAmount={betAmount}
-            setBetAmount={setBetAmount}
-            gameState={gameState}
-            handleBet={handleBet}
-            handleCashout={handleCashout}
-            handleSkip={handleSkip}
-            multiplier={multiplier}
-          />
+      <main className="relative z-10 flex flex-1 items-center justify-center p-4 md:px-12 md:py-4 overflow-y-auto md:overflow-hidden">
+        <div className="flex flex-col lg:grid lg:grid-cols-[320px_1fr_320px] items-center w-full max-w-[1550px] lg:h-[90%] gap-6 md:gap-10 py-8 lg:py-0">
+          <div className="order-2 lg:order-1 w-full max-w-[400px] lg:max-w-none mx-auto">
+            <BettingSidebar
+              register={register}
+              setValue={setValue}
+              betAmountValue={betAmountValue}
+              gameState={gameStateValue}
+              handleBet={handleBet}
+              handleCashout={handleCashout}
+              handleSkip={handleSkip}
+              multiplier={multiplierValue}
+            />
+          </div>
 
-          <Arena
-            currentCard={currentCard}
-            nextCard={nextCard}
-            isRevealing={isRevealing}
-            isMoving={isMoving}
-            shouldFlip={shouldFlip}
-            gameState={gameState}
-            odds={odds}
-            handleGuess={handleGuess}
-          />
+          <div className="order-1 lg:order-2 w-full">
+            <Arena
+              currentCard={currentCard}
+              nextCard={nextCard}
+              isRevealing={isRevealing}
+              isMoving={isMoving}
+              shouldFlip={shouldFlip}
+              gameState={gameStateValue}
+              odds={odds}
+              handleGuess={handleGuess}
+            />
+          </div>
 
-          <StatsSidebar score={score} bestScore={bestScore} />
+          <div className="order-3 lg:order-3 w-full max-w-[400px] lg:max-w-none mx-auto">
+            <StatsSidebar score={scoreValue} bestScore={bestScoreValue} />
+          </div>
         </div>
       </main>
 
-      <ProgressBar streak={streak} multiplier={multiplier} />
+      <ProgressBar streak={streakValue} multiplier={multiplierValue} />
 
-      <RulesModal showRules={showRules} setShowRules={setShowRules} />
+      <RulesModal
+        showRules={showRulesValue}
+        setShowRules={(val) => setValue("showRules", val)}
+      />
     </div>
   );
 }
