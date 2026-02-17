@@ -22,6 +22,12 @@
       radial-gradient(circle at 10% 20%, rgba(77, 230, 209, 0.1) 0%, transparent 50%),
       radial-gradient(circle at 90% 80%, rgba(255, 94, 94, 0.08) 0%, transparent 50%);
   }
+
+  button,
+  input[type="button"],
+  input[type="submit"] {
+    @apply cursor-pointer;
+  }
 }
 
 @layer utilities {
